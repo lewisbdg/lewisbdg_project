@@ -81,6 +81,7 @@ if len(np.where(match)[0]) <= 1:
 b = rd.choice(np.where(match)[0])
 while a == b:
     b = rd.choice(np.where(match)[0])
+    test
     
 
 
