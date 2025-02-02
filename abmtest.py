@@ -24,8 +24,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random as rd
 
-num_years = 10
+num_years = 9
 agent_types = ['NH-W-M', 'NH-W-F', 'NH-B-M', 'NH-B-F','NH-AIAN-M', 'NH-AIAN-F', 'NH-API-M', 'NH-API-F', 'H-W-M', 'H-W-F', 'H-B-M', 'H-B-F', 'H-AIAN-M', 'H-AIAN-F', 'H-API-M', 'H-API-F']
+age_groups = age_groups = np.array(["<16", "16-24", "25-44", "45-64", ">64"])
 
 list_states = pd.read_csv("/Users/lewisbolding/Downloads/us-state-capitals.csv") #Read table of each state, its state capital, and lat/long coordinates
 
@@ -50,9 +51,8 @@ for state1 in list_states.index:
             state_dist[state1, state2] = state_distance(state1, state2) #Calculate distance between two different states, save values in array
             
 class agent: #Define agent class
-    def __init__(self, origin_state, alarm_threshold, state_history, agent_type, agent_age):
+    def __init__(self, origin_state, state_history, agent_type, agent_age):
         self.state = origin_state #Initial state before any migration decisions are made
-        self.alarm = alarm_threshold #Climate score below which agents choose to migrate
         self.history = state_history #Record of where agents move year-by-year
         self.type = agent_type
         self.age = agent_age
@@ -63,21 +63,20 @@ for idx_state in list_states.index: #Loop over 50 states
     print(state)
     state_history = state #Generate state history array (appended later)
     for type_ag in agent_types:
-        for age in range(0, 86):
-            num = num_agents(state, "1990", type_ag, age)
+        for age_grp in age_groups:
+            num = num_agents(state, "1990", type_ag, age_grp)
             for idx_agent in range(int(num)): #Generate 10 agents for each state
-                alarm = np.random.rand() * 2 + 1 #Generate climate score threshold between -1 and 1, below which agents will migrate
-                ags.append(agent(state, alarm, state_history, type_ag, age)) #Add new agent to list
+                ags.append(agent(state, state_history, type_ag, age_grp)) #Add new agent to list
         
 
-for year in range(9): #Simulate over 10 years
+for year in range(num_years): #Simulate over 10 years
     year_actual = str(1990 + year)
 
     prob_array = generate_prob_array(year_actual)
     for i in ags: #Loop over all agents
         state_idx = list_states.name == i.state
-        state_idx2 = np.where((rainfall.State == i.state) & (rainfall.Year == year_actual))[0][0] #Find index corresponding to agent's current state
-        state_clim = rainfall.Mean[state_idx2] #Find climate score for agent's current state
+        #state_idx2 = np.where((rainfall.State == i.state) & (rainfall.Year == year_actual))[0][0] #Find index corresponding to agent's current state
+        #state_clim = rainfall.Mean[state_idx2] #Find climate score for agent's current state
         
         rand_c = np.random.rand()
       #  if rand_c < prob_array[state_idx, 0]:
@@ -90,40 +89,40 @@ for year in range(9): #Simulate over 10 years
         i.history = new_state_history #Add updated state history to agent's profile
     
             
-    num_interactions = 100 #Choose number of interactions between agents
-    for idx_interaction in range(num_interactions): #Loop over all interactions
-        a = np.random.randint(len(ags)) #Choose agent at random to interact. Agents can only interact with those in the same state
-        match = np.zeros(len(ags)) #Generate empty state matching vector
-        for i in range(len(ags)): #Loop over all agents
-            match[i] = ags[i].state == ags[a].state #Find other agents in the same state as this agent
+    #num_interactions = 100 #Choose number of interactions between agents
+    #for idx_interaction in range(num_interactions): #Loop over all interactions
+        #a = np.random.randint(len(ags)) #Choose agent at random to interact. Agents can only interact with those in the same state
+        #match = np.zeros(len(ags)) #Generate empty state matching vector
+        #for i in range(len(ags)): #Loop over all agents
+            #match[i] = ags[i].state == ags[a].state #Find other agents in the same state as this agent
             #if len(np.where(match)[0]) <= 1:
                 #exit()
-        b = rd.choice(np.where(match)[0]) #Choose second agent to interact
-        if a == b:
-            pass #Skip interaction if the same agent is chosen twice
-        else:
-            pass
+        #b = rd.choice(np.where(match)[0]) #Choose second agent to interact
+        #if a == b:
+            #pass #Skip interaction if the same agent is chosen twice
+        #else:
+            #pass
         
     for idx_state in list_states.index: #Loop over 50 states
         state = list_states.name[idx_state] #Find state name from table
         state_history = np.append(np.repeat("None",year + 1), state) #Generate state history array (appended later)
         for type_ag in agent_types:
-            for age in range(0, 86):
-                for idx_agent in range(int(np.round(num_agents(state, year_actual, type_ag, age)/100))): #Generate 10 agents for each state
-                    alarm = np.random.rand() * 2 + 1 #Generate climate score threshold between -1 and 1, below which agents will migrate
-                    ags.append(agent(state, alarm, state_history, type_ag, age)) #Add new agent to list
+            for age_grp in age_groups:
+                for idx_agent in range(int(np.round(num_agents(state, year_actual, type_ag, age_grp)/100))): #Generate 10 agents for each state
+                    #alarm = np.random.rand() * 2 + 1 #Generate climate score threshold between -1 and 1, below which agents will migrate
+                    ags.append(agent(state, state_history, type_ag, age_grp)) #Add new agent to list
 
 ##### DATA ANALYSIS #####
 
 
-final_state_list = np.array([]) #Generate empty array of final states
-a = 0
-for i in ags: #Loop over all agents
-    a = a + 1
-    if a%100 == 0:
-        print(a)
-    final_state = i.history[num_years] #Find agent's final state
-    final_state_list = np.append(final_state_list, final_state) #Update array with agent's final state
+#final_state_list = np.array([]) #Generate empty array of final states
+#a = 0
+#for i in ags: #Loop over all agents
+    #a = a + 1
+    #if a%100 == 0:
+        #print(a)
+    #final_state = i.history[num_years] #Find agent's final state
+    #final_state_list = np.append(final_state_list, final_state) #Update array with agent's final state
 
 
 #count = np.zeros(num_states) #Generate empty array of count of each state in the final state array

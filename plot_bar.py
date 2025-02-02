@@ -19,7 +19,7 @@ import numpy as np
 
 year_plot = 1999
 year_idx = year_plot - 1990
-state = "Vermont"
+state = "Texas"
 
 num_child = 0
 num_16 = 0
@@ -31,22 +31,22 @@ ags_in_state = []
 for agidx in ags:
     if agidx.history[year_idx] == state:
        ags_in_state = np.append(ags_in_state, agidx)
-       if agidx.age < 16:
+       if agidx.age == "<16":
            num_child = num_child + 1
-       elif (agidx.age >= 16) & (agidx.age < 26):
+       elif agidx.age == "16-24":
            num_16 = num_16 + 1
-       elif (agidx.age >= 26) & (agidx.age < 46):
+       elif agidx.age == "25-44":
            num_26 = num_26 + 1
-       elif (agidx.age >= 46) & (agidx.age < 65):
+       elif agidx.age == "45-64":
            num_46 = num_46 + 1
        else:
            num_65 = num_65 + 1
          
-num_child_mod = num_child * 10000
-num_16_mod = num_16 * 10000
-num_26_mod = num_26 * 10000
-num_46_mod = num_46 * 10000
-num_65_mod = num_65 * 10000
+num_child_mod = num_child * 100
+num_16_mod = num_16 * 100
+num_26_mod = num_26 * 100
+num_46_mod = num_46 * 100
+num_65_mod = num_65 * 100
         
 state_data = data_1990s[data_1990s["1990"]["State"] == state]
 num_child_act = np.sum(np.sum(state_data[state_data["1990"]["Age"] < 16][str(year_plot)]))
@@ -67,7 +67,7 @@ plt.xticks(X_axis, X)
 plt.xlabel("Age") 
 plt.ylabel("Population / millions") 
 plt.legend() 
-plt.title("Modelled population distribution for Vermont in 1999")
+plt.title("Modelled population distribution for " + state + " in 1999")
 plt.show()
         
 
