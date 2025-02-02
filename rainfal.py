@@ -61,3 +61,19 @@ data_d.index = data_d.index + 390
 
 rainfall = pd.concat([data_a, AK_data, data_b, DC_data, data_c, HI_data, data_d])
 
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+
+y = np.array(rainfall.Mean[0:130])
+x = np.array(np.arange(1895, 2025))
+
+res = stats.linregress(x,y)
+
+plt.plot(x, y, label='original data')
+plt.plot(x, res.intercept + res.slope*x, 'r', linestyle='dotted', label='fitted line')
+plt.xlabel("Year")
+plt.ylabel("Yearly mean PHDI value")
+plt.show()
+

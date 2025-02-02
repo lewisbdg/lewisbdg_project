@@ -75,6 +75,7 @@ def total_pop(state, year):
 def num_agents(state, year, agent_type, age):
     tot = total_pop(state, year)[0]
     data = total_pop(state, year)[1]
-    num_type = np.array(data[agent_type])[0]
+    num_type = np.array(data[agent_type])[age]
     #prop = round((num_type / tot) * 10000)
     return round(num_type / 10000)
+

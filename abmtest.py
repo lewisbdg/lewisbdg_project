@@ -16,20 +16,22 @@ state's climate rating. This new information may then affect future decisions
 migrate.
 """
 
+import time
+start_time = time.time()
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import random as rd
 
 num_years = 10
-num_states = 51
 agent_types = ['NH-W-M', 'NH-W-F', 'NH-B-M', 'NH-B-F','NH-AIAN-M', 'NH-AIAN-F', 'NH-API-M', 'NH-API-F', 'H-W-M', 'H-W-F', 'H-B-M', 'H-B-F', 'H-AIAN-M', 'H-AIAN-F', 'H-API-M', 'H-API-F']
 
 list_states = pd.read_csv("/Users/lewisbolding/Downloads/us-state-capitals.csv") #Read table of each state, its state capital, and lat/long coordinates
 
-
 line = pd.DataFrame({"name": "District of Columbia", "description": "District of Columbia", "latitude":38.8898, "longitude":-77.0091}, index=[9])
 list_states = pd.concat([list_states.iloc[:8], line, list_states.iloc[8:]]).reset_index(drop=True)
+list_states = pd.concat([list_states.iloc[:9], list_states.iloc[10:12], list_states.iloc[[9]], list_states.iloc[12:32], list_states.iloc[[34]], list_states.iloc[32:34], list_states.iloc[35:]]).reset_index(drop=True)
 
 def state_distance(state1, state2): #Function calculates distance between two state capitals using lat/long coordinates
     lat1 = np.deg2rad(list_states.loc[state1, "latitude"])
@@ -48,47 +50,46 @@ for state1 in list_states.index:
             state_dist[state1, state2] = state_distance(state1, state2) #Calculate distance between two different states, save values in array
             
 class agent: #Define agent class
-    def __init__(self, origin_state, alarm_threshold, state_history):
+    def __init__(self, origin_state, alarm_threshold, state_history, agent_type, agent_age):
         self.state = origin_state #Initial state before any migration decisions are made
         self.alarm = alarm_threshold #Climate score below which agents choose to migrate
         self.history = state_history #Record of where agents move year-by-year
+        self.type = agent_type
+        self.age = agent_age
 
 ags = list() #Create empty list of agents
 for idx_state in list_states.index: #Loop over 50 states
     state = list_states.name[idx_state] #Find state name from table
     print(state)
-    dist_array = state_dist[idx_state, :] #Find distance from chosen state to all other states
-    max_dist = np.max(dist_array) #Find maximum distance
     state_history = state #Generate state history array (appended later)
-    for type in agent_types:
+    for type_ag in agent_types:
         for age in range(0, 86):
-            for idx_agent in range(int(num_agents(state, "1990", type, age))): #Generate 10 agents for each state
+            num = num_agents(state, "1990", type_ag, age)
+            for idx_agent in range(int(num)): #Generate 10 agents for each state
                 alarm = np.random.rand() * 2 + 1 #Generate climate score threshold between -1 and 1, below which agents will migrate
-                ags.append(agent(state, alarm, state_history)) #Add new agent to list
+                ags.append(agent(state, alarm, state_history, type_ag, age)) #Add new agent to list
         
 
-for year in range(num_years): #Simulate over 10 years
-    year_actual = str(1980 + year)
+for year in range(9): #Simulate over 10 years
+    year_actual = str(1990 + year)
 
+    prob_array = generate_prob_array(year_actual)
     for i in ags: #Loop over all agents
-        print(i.state)
-        state_idx = state_idx = list_states.name == i.state
+        state_idx = list_states.name == i.state
         state_idx2 = np.where((rainfall.State == i.state) & (rainfall.Year == year_actual))[0][0] #Find index corresponding to agent's current state
         state_clim = rainfall.Mean[state_idx2] #Find climate score for agent's current state
-        if np.abs(state_clim) > i.alarm: #If state climate score is below agent's threshold, choose to migrate
-            gain = rainfall.Mean[(np.where(rainfall.Year == year_actual))[0]] - state_clim #Calculate difference between all other states and agent's current state ("climate gain")
-            gain_dist = np.nan_to_num(gain / state_dist[state_idx][0]) #Calculate gain per unit distance
-            index_max = np.argmax(gain_dist) #Find index of state with maximum gain per unit distance
-            new_state = list_states.name[index_max] #Find name of this state
-            i.state = new_state #Change agent's current state to this new state - the agent has migrated!
-            new_state_history = np.append(i.history, new_state) #Add this state to the agent's state history 
-            i.history = new_state_history #Add updated state history to agent's profile
-        else: #If state climate score is above agent's threshold, choose not to migrate
-            new_state_history = np.append(i.history, i.state) #Update agent's state history - no change
-            i.history = new_state_history
-
-
-
+        
+        rand_c = np.random.rand()
+      #  if rand_c < prob_array[state_idx, 0]:
+        #    state_destination_idx = 0
+       # else: 
+        state_destination_idx = np.where((rand_c < prob_array[state_idx, :])[0])[0][0]
+        state_destination = list_states.name[state_destination_idx] #Find name of this state
+        i.state = state_destination#Change agent's current state to this new state - the agent has migrated!
+        new_state_history = np.append(i.history, state_destination) #Add this state to the agent's state history 
+        i.history = new_state_history #Add updated state history to agent's profile
+    
+            
     num_interactions = 100 #Choose number of interactions between agents
     for idx_interaction in range(num_interactions): #Loop over all interactions
         a = np.random.randint(len(ags)) #Choose agent at random to interact. Agents can only interact with those in the same state
@@ -102,6 +103,16 @@ for year in range(num_years): #Simulate over 10 years
             pass #Skip interaction if the same agent is chosen twice
         else:
             pass
+        
+    for idx_state in list_states.index: #Loop over 50 states
+        state = list_states.name[idx_state] #Find state name from table
+        state_history = np.append(np.repeat("None",year + 1), state) #Generate state history array (appended later)
+        for type_ag in agent_types:
+            for age in range(0, 86):
+                for idx_agent in range(int(np.round(num_agents(state, year_actual, type_ag, age)/100))): #Generate 10 agents for each state
+                    alarm = np.random.rand() * 2 + 1 #Generate climate score threshold between -1 and 1, below which agents will migrate
+                    ags.append(agent(state, alarm, state_history, type_ag, age)) #Add new agent to list
+
 ##### DATA ANALYSIS #####
 
 
@@ -152,7 +163,7 @@ for i in ags: #Loop over all agents
 #plt.xlabel("Year")
 #plt.ylabel("Number of moves")
     
-
+print("--- %s seconds ---" % (time.time() - start_time))
 
 
         
